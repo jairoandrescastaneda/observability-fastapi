@@ -11,6 +11,13 @@ fastapi = "^0.93.0"
 uvicorn = "^0.20.0"
 python-dotenv = "^1.0.0"
 psycopg2 = "^2.9.5"
+opentelemetry-instrumentation-fastapi = "^0.40b0"
+opentelemetry-instrumentation-sqlalchemy = "^0.40b0"
+opentelemetry-exporter-otlp-proto-grpc = "^1.19.0"
+opentelemetry-instrumentation = "^0.40b0"
+opentelemetry-sdk = "^1.19.0"
+opentelemetry-exporter-otlp = "^1.19.0"
+black = "^23.7.0"
 
 [tool.poetry.dev-dependencies]
 black = "^23.1.0"

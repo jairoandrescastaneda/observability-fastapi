@@ -1,3 +1,10 @@
+
+# Extension
+
+The original project can be found [here](https://github.com/jeremyleonardo/books-crud-fastapi). This repo is an extension to instrument the code using Open Telemetry and otel-collector
+
+
+
 # Books API
 
 A simple CRUD API created with FastAPI and SQLAlchemy for PostgreSQL

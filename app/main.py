@@ -1,6 +1,6 @@
 from datetime import date
 from typing import Optional
-
+import logging
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -9,6 +9,35 @@ from sqlalchemy.orm import sessionmaker
 
 from app.models import Base, Book
 from app.settings import DATABASE_URL
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import Resource
+
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s]: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("app")
+
+otlp_exporter = OTLPSpanExporter(endpoint="localhost:4317", insecure=True)
+resource = Resource.create(
+    {
+        "service.name": "my_app",
+    }
+)
+trace.set_tracer_provider(TracerProvider(resource=resource))
+tracer = trace.get_tracer(__name__)
+span_processor = SimpleSpanProcessor(otlp_exporter)
+trace.get_tracer_provider().add_span_processor(span_processor)
+
+SQLAlchemyInstrumentor().instrument(enable_commenter=True, commenter_options={})
+
 
 # DISCLAIMER:
 # This is a very simple CRUD API
@@ -27,6 +56,7 @@ def recreate_database():
 recreate_database()
 
 app = FastAPI()
+FastAPIInstrumentor.instrument_app(app)
 
 
 @app.get("/")
@@ -36,6 +66,7 @@ def root():
 
 @app.post("/books")
 def create_book(title: str, pages: int):
+    logger.debug("Creating a new book")
     session = Session()
     book = Book(title=title, pages=pages, created_at=date.today())
     session.add(book)
@@ -60,6 +91,7 @@ def find_book(id: int):
 
 @app.get("/books")
 def get_books(page_size: int = 10, page: int = 1):
+    logger.debug("Getting all the books")
     if page_size > 100 or page_size < 0:
         page_size = 100
 
@@ -108,6 +140,7 @@ def exception_handler(request, exc):
 
 
 def get_default_error_response(status_code=500, message="Internal Server Error"):
+    logger.error(message)
     return JSONResponse(
         status_code=status_code,
         content={"status_code": status_code, "message": message},

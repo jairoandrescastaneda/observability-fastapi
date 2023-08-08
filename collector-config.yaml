@@ -1,0 +1,30 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+  
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+
+exporters:
+  logging:
+    loglevel: debug
+  otlphttp/elastic:
+    endpoint: "https://your_endpoint:443"
+    headers: 
+      Authorization: "Bearer your_token"
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      exporters: [logging, otlphttp/elastic]
+    traces:
+      receivers: [otlp]
+      exporters: [logging, otlphttp/elastic]
+    logs: 
+      receivers: [otlp]
+      exporters: [logging,otlphttp/elastic]
